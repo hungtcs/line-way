@@ -1,0 +1,12 @@
+
+:host {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  ::ng-deep {
+    > svg {
+      width: 1em;
+      height: 1em;
+    }
+  }
+}
