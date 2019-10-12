@@ -1,6 +1,6 @@
 import Konva from 'konva';
 import { levels } from '../levels';
-import { from, of, interval } from 'rxjs';
+import { from, of, interval, Subscription } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Tadpole, OutsetTadpole } from '../tadpoles/public_api';
 import { EventUtil, LocalStorageService } from '../../../shared/public_api';
@@ -49,7 +49,9 @@ export class PlayerComponent implements OnInit {
   private tadpoleMap: Array<Tadpole> = [];
   private tadpoleGroup: Konva.Group;
   private backgroundTween: Konva.Tween;
+  private showControlsTimer: number;
   private activeTadpoleQueue: Array<Tadpole> = new Array();
+  private drawTadpoleMapSubscription: Subscription;
 
   @ViewChild('container', { read: ElementRef, static: true })
   public container: ElementRef<HTMLDivElement>;
@@ -67,13 +69,15 @@ export class PlayerComponent implements OnInit {
 
   public ngOnInit() {
     this.activatedRoute.paramMap
+      .pipe(tap(() => this.promptCancel()))
       .pipe(map(paramMap => Number.parseInt(paramMap.get('level'))))
-      .pipe(tap((level) => this.level = level < levels.length ? level : 0))
+      .pipe(tap((level) => this.level = level < levels.length ? level < 0 ? 0 : level : 0))
       .pipe(tap((level) => this.localStorageService.setItem('level', level)))
       .pipe(tap(() => this.plainMap = levels[this.level]))
       .pipe(tap(() => this.stage || this.initStage()))
       .pipe(tap(() => this.onWindowResize()))
       .pipe(tap(() => this.drawTadpoleMap()))
+      .pipe(tap(() => this.promptReady()))
       .subscribe();
   }
 
@@ -141,8 +145,6 @@ export class PlayerComponent implements OnInit {
     this.layer.zIndex(1);
     this.promptLayer.zIndex(2);
 
-    this.promptReady();
-
     this.backgroundTween = new Konva.Tween({
       node: this.background,
       fill: 'black',
@@ -151,19 +153,12 @@ export class PlayerComponent implements OnInit {
 
     this.stage.on('mouseup', event => this.onStageMouseUp(event));
     this.stage.on('touchend', event => this.onStageMouseUp(event));
-    this.stage.on('contextmenu', event => {
-      event.evt.preventDefault();
-      event.evt.stopPropagation();
-      this.showControls = !this.showControls;
-    });
-    this.stage.on('dbltap', event => {
-      event.evt.preventDefault();
-      event.evt.stopPropagation();
-      this.showControls = !this.showControls;
-    });
+    this.stage.on('dbltap', event => this.onStageContextMenu(event));
+    this.stage.on('contextmenu', event => this.onStageContextMenu(event));
   }
 
   private drawTadpoleMap() {
+    this.drawTadpoleMapSubscription && this.drawTadpoleMapSubscription.unsubscribe();
     this.backgroundTween.reverse();
     this.activeTadpoleQueue = [];
     this.tadpoleMap.forEach(tadpole => {
@@ -173,7 +168,7 @@ export class PlayerComponent implements OnInit {
       tadpole.node.destroy();
     });
     this.tadpoleMap = [];
-    of(this.plainMap)
+    this.drawTadpoleMapSubscription = of(this.plainMap)
       .pipe(map(map => map.map((row, index) => ({ row, index }))))
       .pipe(map(rows => rows.flatMap((row) => row.row.map((col, colIndex) => ({ col, colIndex, rowIndex: row.index })))))
       .pipe(mergeMap(cols => from(cols)))
@@ -183,6 +178,20 @@ export class PlayerComponent implements OnInit {
       .pipe(tap(() => this.stage.draw()))
       .pipe(tap((tadpole) => this.tadpoleMap.push(tadpole)))
       .subscribe();
+  }
+
+  private onStageContextMenu(event: Konva.KonvaEventObject<MouseEvent|TouchEvent>) {
+    event.evt.preventDefault();
+    event.evt.stopPropagation();
+    this.showControlsTimer && window.clearTimeout(this.showControlsTimer);
+    if(this.showControls) {
+      this.showControls = false;
+    } else {
+      this.showControls = true;
+      window.setTimeout(() => {
+        this.showControls = false;
+      }, 3000);
+    }
   }
 
   private onStageMouseUp(event: Konva.KonvaEventObject<MouseEvent|TouchEvent>) {
@@ -372,6 +381,7 @@ export class PlayerComponent implements OnInit {
   }
 
   private promptReady(timeout: number = 5000) {
+    this.promptTimer && window.clearTimeout(this.promptTimer);
     this.promptTimer = window.setTimeout(() => {
       this.promptLayer.show();
       const tadpole = this.tadpoleMap.flat().find(tadpole => tadpole instanceof OutsetTadpole);
@@ -397,7 +407,7 @@ export class PlayerComponent implements OnInit {
 
   private promptCancel() {
     this.promptTimer && window.clearTimeout(this.promptTimer);
-    this.promptLayer.hide();
+    this.promptLayer && this.promptLayer.hide();
   }
 
   private createRing(tadpole: Tadpole) {
