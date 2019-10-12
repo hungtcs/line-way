@@ -1,27 +1,18 @@
-# LineWay
+Line Way
+====
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 8.3.8.
+灵改来源于Steam上面的游戏[Line Way](https://store.steampowered.com/app/661430/LineWay/)，这是一个精简化的在线版本。
 
-## Development server
+Github Pages部署版本的访问路径：[line-way.hungtcs.top](http://line-way.hungtcs.top)
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
 
-## Code scaffolding
+### 截图
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+![](./doc/images/screenshot.gif)
 
-## Build
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+### Chrome 浏览器新标签页插件
 
-## Running unit tests
+![](./doc/images/screenshot-chrome.png)
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+插件可以使用加载已解压的文件夹方式加载，方式为clone或者下载本项目的压缩包到本地，然后使用Chrome的插件管理器加载项目目录下的`chrome-extension`文件夹。
