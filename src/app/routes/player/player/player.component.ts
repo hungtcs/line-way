@@ -7,13 +7,36 @@ import { Tadpole, OutsetTadpole } from '../tadpoles/public_api';
 import { tap, map, mergeMap, zip, filter } from 'rxjs/operators';
 import { Component, ElementRef, ViewChild, HostListener, OnInit } from '@angular/core';
 import { gapSize, size, scaledSize, fillColor, cornerRadius, scaledFillColor, tweenDuration, scaledCornerRadius } from '../../config';
+import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({
   selector: 'lw-game-entrance',
   styleUrls: ['./player.component.scss'],
+  animations: [
+    trigger('showControls', [
+      state('true', style({
+        opacity: 1,
+      })),
+      state('false', style({
+        opacity: 0,
+        display: 'none',
+      })),
+      transition('false => true', [
+        style({
+          display: '*',
+        }),
+        animate(1000),
+      ]),
+      transition('true => false', [
+        animate(1000),
+      ]),
+    ]),
+  ],
   templateUrl: './player.component.html',
 })
 export class PlayerComponent implements OnInit {
+  public fullscreen: boolean = document.fullscreen;
+  public showControls: boolean = false;
   private level: number;
   private stage: Konva.Stage;
   private plainMap: Array<Array<typeof Tadpole>>;
@@ -42,7 +65,7 @@ export class PlayerComponent implements OnInit {
     this.activatedRoute.paramMap
       .pipe(map(paramMap => Number.parseInt(paramMap.get('level'))))
       .pipe(tap((level) => this.level = level < levels.length ? level : 0))
-      .pipe(tap((level) => this.localStorageService.setItem('level', this.level)))
+      .pipe(tap((level) => this.localStorageService.setItem('level', level)))
       .pipe(tap(() => this.plainMap = levels[this.level]))
       .pipe(tap(() => this.stage || this.initStage()))
       .pipe(tap(() => this.onWindowResize()))
@@ -63,6 +86,18 @@ export class PlayerComponent implements OnInit {
     this.promptLayer.y((this.stage.height() - (this.plainMap.length * (size + gapSize) - gapSize)) / 2);
 
     this.stage.draw();
+  }
+
+  public toggleFullscreen() {
+    if(document.fullscreen) {
+      document.exitFullscreen();
+      this.fullscreen = false;
+      this.showControls = false;
+    } else {
+      document.documentElement.requestFullscreen();
+      this.fullscreen = true;
+      this.showControls = false;
+    }
   }
 
   private initStage() {
@@ -115,6 +150,12 @@ export class PlayerComponent implements OnInit {
     this.stage.on('contextmenu', event => {
       event.evt.preventDefault();
       event.evt.stopPropagation();
+      this.showControls = !this.showControls;
+    });
+    this.stage.on('dbltap', event => {
+      event.evt.preventDefault();
+      event.evt.stopPropagation();
+      this.showControls = !this.showControls;
     });
   }
 
@@ -171,6 +212,7 @@ export class PlayerComponent implements OnInit {
   }
 
   private onNodeMouseDown(event: Konva.KonvaEventObject<MouseEvent|TouchEvent>) {
+    this.showControls = false;
     if(event.evt instanceof MouseEvent && !EventUtil.isLeftMouseButton(event.evt)) {
       return;
     };

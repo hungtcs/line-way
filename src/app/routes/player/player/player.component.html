@@ -1,1 +1,9 @@
+<header [@showControls]="showControls">
+  <section class="left"></section>
+  <section class="right">
+    <a (click)="toggleFullscreen();">
+      <lw-svg-icon [name]="fullscreen ? 'fullscreen-exit' : 'fullscreen'"></lw-svg-icon>
+    </a>
+  </section>
+</header>
 <div class="container" #container></div>
