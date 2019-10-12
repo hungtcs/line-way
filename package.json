@@ -1,6 +1,6 @@
 {
   "name": "line-way",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "scripts": {
     "start": "ng serve --host=0.0.0.0",
     "build": "ng build",
