@@ -1,7 +1,7 @@
 import Color from "color";
 
 export const size = 50;
-export const gapSize = 8;
+export const gapSize = 6;
 export const fillColor = '#208C85';
 export const scalingRate = 0.74;
 export const scaledSize = size * scalingRate;

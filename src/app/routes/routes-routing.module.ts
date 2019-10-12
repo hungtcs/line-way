@@ -12,14 +12,16 @@ const routes: Routes = [
     loadChildren: () => import('./player/player.module').then(module => module.PlayerModule),
   },
   {
-    path: 'designer',
-    loadChildren: () => import('./designer/designer.module').then(module => module.DesignerModule),
+    path: '**',
+    redirectTo: 'player',
   },
 ];
 
 @NgModule({
   imports: [
-    RouterModule.forRoot(routes),
+    RouterModule.forRoot(routes, {
+      useHash: true,
+    }),
   ],
   exports: [
     RouterModule,

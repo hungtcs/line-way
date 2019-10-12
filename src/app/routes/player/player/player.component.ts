@@ -1,44 +1,78 @@
 import Konva from 'konva';
-import { EventUtil } from '../../../shared/public_api';
-import { Tadpole, OutsetTadpole, DefaultTadpole } from '../tadpoles/public_api';
+import { levels } from '../levels';
+import { EventUtil, LocalStorageService } from '../../../shared/public_api';
+import { from, of, interval } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Tadpole, OutsetTadpole } from '../tadpoles/public_api';
+import { tap, map, mergeMap, zip, filter } from 'rxjs/operators';
 import { Component, ElementRef, ViewChild, HostListener, OnInit } from '@angular/core';
 import { gapSize, size, scaledSize, fillColor, cornerRadius, scaledFillColor, tweenDuration, scaledCornerRadius } from '../../config';
 
-const plainMap = [
-  [OutsetTadpole, DefaultTadpole, DefaultTadpole, DefaultTadpole],
-];
-
 @Component({
   selector: 'lw-game-entrance',
-  styleUrls: ['./game-entrance.component.scss'],
-  templateUrl: './game-entrance.component.html',
+  styleUrls: ['./player.component.scss'],
+  templateUrl: './player.component.html',
 })
-export class GameEntranceComponent implements OnInit {
+export class PlayerComponent implements OnInit {
+  private level: number;
   private stage: Konva.Stage;
+  private plainMap: Array<Array<typeof Tadpole>>;
   private layer: Konva.Layer;
   private active: boolean = false;
   private pathGroup: Konva.Group;
   private promptTimer: number;
   private promptLayer: Konva.Layer;
   private background: Konva.Shape;
-  private tadpoleMap: Array<Array<Tadpole>> = [];
+  private tadpoleMap: Array<Tadpole> = [];
   private tadpoleGroup: Konva.Group;
+  private backgroundTween: Konva.Tween;
   private activeTadpoleQueue: Array<Tadpole> = new Array();
 
   @ViewChild('container', { read: ElementRef, static: true })
   public container: ElementRef<HTMLDivElement>;
 
+  constructor(
+      private readonly router: Router,
+      private readonly activatedRoute: ActivatedRoute,
+      private readonly localStorageService: LocalStorageService) {
+
+  }
+
   public ngOnInit() {
+    this.activatedRoute.paramMap
+      .pipe(map(paramMap => Number.parseInt(paramMap.get('level'))))
+      .pipe(tap((level) => this.level = level < levels.length ? level : 0))
+      .pipe(tap((level) => this.localStorageService.setItem('level', this.level)))
+      .pipe(tap(() => this.plainMap = levels[this.level]))
+      .pipe(tap(() => this.stage || this.initStage()))
+      .pipe(tap(() => this.onWindowResize()))
+      .pipe(tap(() => this.drawTadpoleMap()))
+      .subscribe();
+  }
+
+  @HostListener('window:resize')
+  public onWindowResize() {
+    this.stage.width(this.container.nativeElement.clientWidth);
+    this.stage.height(this.container.nativeElement.clientHeight);
+    this.background.width(this.container.nativeElement.clientWidth);
+    this.background.height(this.container.nativeElement.clientHeight);
+
+    this.layer.x((this.stage.width() - (this.plainMap[0].length * (size + gapSize) - gapSize)) / 2);
+    this.layer.y((this.stage.height() - (this.plainMap.length * (size + gapSize) - gapSize)) / 2);
+    this.promptLayer.x((this.stage.width() - (this.plainMap[0].length * (size + gapSize) - gapSize)) / 2);
+    this.promptLayer.y((this.stage.height() - (this.plainMap.length * (size + gapSize) - gapSize)) / 2);
+
+    this.stage.draw();
+  }
+
+  private initStage() {
     this.stage = new Konva.Stage({
       width: this.container.nativeElement.clientWidth,
       height: this.container.nativeElement.clientHeight,
       container: this.container.nativeElement,
     });
 
-    this.layer = new Konva.Layer({
-      x: (this.stage.width() - (plainMap[0].length * (size + gapSize) - gapSize)) / 2,
-      y: (this.stage.height() - (plainMap.length * (size + gapSize) - gapSize)) / 2,
-    });
+    this.layer = new Konva.Layer();
     this.pathGroup = new Konva.Group();
     this.tadpoleGroup = new Konva.Group();
 
@@ -58,10 +92,7 @@ export class GameEntranceComponent implements OnInit {
     const backgroundLayer = new Konva.Layer();
     backgroundLayer.add(this.background);
 
-    this.promptLayer = new Konva.Layer({
-      x: (this.stage.width() - (plainMap[0].length * (size + gapSize) - gapSize)) / 2,
-      y: (this.stage.height() - (plainMap.length * (size + gapSize) - gapSize)) / 2,
-    });
+    this.promptLayer = new Konva.Layer();
 
     this.stage.add(backgroundLayer);
     this.stage.add(this.layer);
@@ -71,47 +102,48 @@ export class GameEntranceComponent implements OnInit {
     this.layer.zIndex(1);
     this.promptLayer.zIndex(2);
 
-    this.drawTadpoleMap();
     this.promptReady();
+
+    this.backgroundTween = new Konva.Tween({
+      node: this.background,
+      fill: 'black',
+      duration: 1,
+    });
+
     this.stage.on('mouseup', event => this.onStageMouseUp(event));
+    this.stage.on('touchend', event => this.onStageMouseUp(event));
     this.stage.on('contextmenu', event => {
-      console.log('A');
       event.evt.preventDefault();
       event.evt.stopPropagation();
     });
   }
 
-  @HostListener('window:resize')
-  public onWindowResize() {
-    this.stage.width(this.container.nativeElement.clientWidth);
-    this.stage.height(this.container.nativeElement.clientHeight);
-    this.background.width(this.container.nativeElement.clientWidth);
-    this.background.height(this.container.nativeElement.clientHeight);
-
-    this.layer.x((this.stage.width() - (plainMap[0].length * (size + gapSize) - gapSize)) / 2);
-    this.layer.y((this.stage.height() - (plainMap.length * (size + gapSize) - gapSize)) / 2);
-    this.promptLayer.x((this.stage.width() - (plainMap[0].length * (size + gapSize) - gapSize)) / 2);
-    this.promptLayer.y((this.stage.height() - (plainMap.length * (size + gapSize) - gapSize)) / 2);
-
-    this.stage.draw();
-  }
-
   private drawTadpoleMap() {
-    this.tadpoleMap = plainMap.map((row, rowIndex) => row.map((TadpoleType, colIndex) => {
-      if(TadpoleType) {
-        return this.createTadpole(colIndex, rowIndex, TadpoleType);
-      } else {
-        return null;
-      }
-    }));
-    this.stage.draw();
+    this.backgroundTween.reverse();
+    this.activeTadpoleQueue = [];
+    this.tadpoleMap.forEach(tadpole => {
+      tadpole.pathNode && (tadpole.pathNode.remove(), tadpole.pathNode.destroy());
+      tadpole.evolution && tadpole.evolution.destroy();
+      tadpole.node.remove();
+      tadpole.node.destroy();
+    });
+    this.tadpoleMap = [];
+    of(this.plainMap)
+      .pipe(map(map => map.map((row, index) => ({ row, index }))))
+      .pipe(map(rows => rows.flatMap((row) => row.row.map((col, colIndex) => ({ col, colIndex, rowIndex: row.index })))))
+      .pipe(mergeMap(cols => from(cols)))
+      .pipe(zip(interval(50)))
+      .pipe(filter(([col]) => !!col.col))
+      .pipe(map(([col]) => this.createTadpole(col.colIndex, col.rowIndex, col.col)))
+      .pipe(tap(() => this.stage.draw()))
+      .pipe(tap((tadpole) => this.tadpoleMap.push(tadpole)))
+      .subscribe();
   }
 
-  private onStageMouseUp(event: Konva.KonvaEventObject<MouseEvent>) {
+  private onStageMouseUp(event: Konva.KonvaEventObject<MouseEvent|TouchEvent>) {
     if(this.active) {
       this.active = false;
       if(this.tadpoleMap.flat().filter(tadpole => tadpole !== null).length === this.activeTadpoleQueue.length) {
-        console.log('win');
         this.activeTadpoleQueue.forEach(item => {
           this.layer.draw();
           new Konva.Tween({
@@ -126,12 +158,11 @@ export class GameEntranceComponent implements OnInit {
             duration: 0.5,
             shadowColor: 'white',
           }).play());
-          new Konva.Tween({
-            node: this.background,
-            fill: 'black',
-            duration: 1,
-          }).play();
+          this.backgroundTween.play();
         });
+        window.setTimeout(() => {
+          this.router.navigate(['/player', this.level + 1]);
+        }, 1500);
       } else {
         this.recovery();
         this.promptReady(5000);
@@ -139,8 +170,8 @@ export class GameEntranceComponent implements OnInit {
     }
   }
 
-  private onNodeMouseDown(event: Konva.KonvaEventObject<MouseEvent>) {
-    if(!EventUtil.isLeftMouseButton(event.evt)) {
+  private onNodeMouseDown(event: Konva.KonvaEventObject<MouseEvent|TouchEvent>) {
+    if(event.evt instanceof MouseEvent && !EventUtil.isLeftMouseButton(event.evt)) {
       return;
     };
     const node = event.currentTarget;
@@ -154,7 +185,7 @@ export class GameEntranceComponent implements OnInit {
     }
   }
 
-  private onNodeMouseEnter(event: Konva.KonvaEventObject<MouseEvent>) {
+  private onNodeMouseEnter(event: Konva.KonvaEventObject<MouseEvent|TouchEvent>) {
     const rect = event.currentTarget;
     const tadpole: Tadpole = rect.attrs.tadpole;
     if(this.activeTadpoleQueue.length > 0 && this.active) {
@@ -229,7 +260,9 @@ export class GameEntranceComponent implements OnInit {
       cornerRadius: cornerRadius,
     });
     node.on('mousedown', event => this.onNodeMouseDown(event));
+    node.on('touchstart', event => this.onNodeMouseDown(event));
     node.on('mouseenter', event => this.onNodeMouseEnter(event));
+    node.on('touchmove', event => this.onNodeMouseEnter(event));
     this.tadpoleGroup.add(node);
 
     if(TadpoleType === OutsetTadpole) {
@@ -287,12 +320,12 @@ export class GameEntranceComponent implements OnInit {
         tadpole.pathNode && tadpole.pathNode.remove();
         tadpole.evolution.reverse();
         tadpole.pathNodeEvolution && tadpole.pathNodeEvolution.reverse();
-        setTimeout(() => _(queue), 50);
+        setTimeout(() => _(queue), 100);
       }
     }(this.activeTadpoleQueue));
   }
 
-  private promptReady(timeout: number = 3000) {
+  private promptReady(timeout: number = 5000) {
     this.promptTimer = window.setTimeout(() => {
       this.promptLayer.show();
       const tadpole = this.tadpoleMap.flat().find(tadpole => tadpole instanceof OutsetTadpole);

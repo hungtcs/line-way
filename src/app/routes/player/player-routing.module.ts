@@ -1,16 +1,16 @@
 import { NgModule } from '@angular/core';
+import { PlayerComponent } from './player/player.component';
+import { LoadingComponent } from './loading/loading.component';
 import { Routes, RouterModule } from '@angular/router';
-import { GameEntranceComponent } from './game-entrance/game-entrance.component';
 
 const routes: Routes = [
   {
     path: '',
-    pathMatch: 'full',
-    redirectTo: '0',
+    component: LoadingComponent,
   },
   {
-    path: ':index',
-    component: GameEntranceComponent,
+    path: ':level',
+    component: PlayerComponent,
   },
 ];
 

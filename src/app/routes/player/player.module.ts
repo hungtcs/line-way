@@ -1,8 +1,9 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from '../../shared/public_api';
+import { PlayerComponent } from './player/player.component';
 import { PlayerRoutingModule } from './player-routing.module';
-import { GameEntranceComponent } from './game-entrance/game-entrance.component';
+import { LoadingComponent } from './loading/loading.component';
 
 @NgModule({
   imports: [
@@ -10,11 +11,9 @@ import { GameEntranceComponent } from './game-entrance/game-entrance.component';
     SharedModule,
     PlayerRoutingModule,
   ],
-  exports: [
-    GameEntranceComponent,
-  ],
   declarations: [
-    GameEntranceComponent,
+    PlayerComponent,
+    LoadingComponent,
   ],
 })
 export class PlayerModule {

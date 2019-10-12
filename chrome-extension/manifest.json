@@ -1,0 +1,15 @@
+{
+  "name": "连一连",
+  "icons": {
+    "32": "./assets/icon.png",
+    "64": "./assets/icon@2x.png",
+    "128": "./assets/icon@4x.png"
+  },
+  "version": "0.0.1",
+  "incognito": "split",
+  "description": "连一连谷歌浏览器首页扩展",
+  "manifest_version": 2,
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  }
+}

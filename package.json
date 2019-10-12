@@ -4,7 +4,9 @@
   "scripts": {
     "start": "ng serve --host=0.0.0.0",
     "build": "ng build",
-    "build:prod": "ng build --pood"
+    "build:prod": "ng build --prod",
+    "build:chrome-extension": "ng build --prod --base-href=index.html",
+    "postbuild:chrome-extension": ". scripts/post-build-chrome-extension.sh"
   },
   "private": true,
   "dependencies": {
