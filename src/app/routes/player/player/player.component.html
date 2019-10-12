@@ -1,9 +1,31 @@
 <header [@showControls]="showControls">
-  <section class="left"></section>
+  <section class="left">
+    <a href="https://github.com/hungtcs/line-way">
+      <lw-svg-icon name="settings-ethernet"></lw-svg-icon>
+    </a>
+  </section>
   <section class="right">
+    <a>
+      <lw-svg-icon name="volume-off"></lw-svg-icon>
+    </a>
     <a (click)="toggleFullscreen();">
       <lw-svg-icon [name]="fullscreen ? 'fullscreen-exit' : 'fullscreen'"></lw-svg-icon>
     </a>
   </section>
 </header>
 <div class="container" #container></div>
+<footer [@showControls]="showControls">
+  <section class="left">
+    <a routerLink="/player/{{ level - 1 }}">
+      <lw-svg-icon name="keyboard-arrow-left"></lw-svg-icon>
+    </a>
+  </section>
+  <section>
+    <lw-progress-bar color="rgba(255, 255, 255, 0.5)" [value]="(level / (levelsNum - 1)) * 100"></lw-progress-bar>
+  </section>
+  <section class="right">
+    <a routerLink="/player/{{ level + 1 }}">
+      <lw-svg-icon name="keyboard-arrow-right"></lw-svg-icon>
+    </a>
+  </section>
+</footer>

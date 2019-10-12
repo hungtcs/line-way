@@ -9,8 +9,7 @@
     height: 100%;
     display: block;
   }
-  > header {
-    top: 0;
+  > header, footer {
     left: 0;
     right: 0;
     z-index: 1;
@@ -33,10 +32,23 @@
         opacity: 0.5;
         font-size: 4rem;
         transition: opacity 200ms;
+        & + a {
+          margin-left: 1rem;
+        }
         &:hover {
           opacity: 1;
         }
       }
+    }
+  }
+  > header {
+    top: 0;
+  }
+  > footer {
+    bottom: 0;
+    > section.left,
+    > section.right {
+      flex: 0 0 auto;
     }
   }
 }

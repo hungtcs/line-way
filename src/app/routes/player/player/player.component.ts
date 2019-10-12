@@ -1,13 +1,13 @@
 import Konva from 'konva';
 import { levels } from '../levels';
-import { EventUtil, LocalStorageService } from '../../../shared/public_api';
 import { from, of, interval } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Tadpole, OutsetTadpole } from '../tadpoles/public_api';
+import { EventUtil, LocalStorageService } from '../../../shared/public_api';
 import { tap, map, mergeMap, zip, filter } from 'rxjs/operators';
+import { trigger, state, style, transition, animate } from '@angular/animations';
 import { Component, ElementRef, ViewChild, HostListener, OnInit } from '@angular/core';
 import { gapSize, size, scaledSize, fillColor, cornerRadius, scaledFillColor, tweenDuration, scaledCornerRadius } from '../../config';
-import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({
   selector: 'lw-game-entrance',
@@ -35,9 +35,9 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
   templateUrl: './player.component.html',
 })
 export class PlayerComponent implements OnInit {
+  public level: number;
   public fullscreen: boolean = document.fullscreen;
   public showControls: boolean = false;
-  private level: number;
   private stage: Konva.Stage;
   private plainMap: Array<Array<typeof Tadpole>>;
   private layer: Konva.Layer;
@@ -53,6 +53,10 @@ export class PlayerComponent implements OnInit {
 
   @ViewChild('container', { read: ElementRef, static: true })
   public container: ElementRef<HTMLDivElement>;
+
+  get levelsNum() {
+    return levels.length;
+  }
 
   constructor(
       private readonly router: Router,
