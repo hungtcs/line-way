@@ -30,6 +30,7 @@
         height: 4rem;
         cursor: pointer;
         opacity: 0.5;
+        display: flex;
         font-size: 4rem;
         transition: opacity 200ms;
         & + a {

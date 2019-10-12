@@ -2,7 +2,9 @@
 :host {
   width: 1em;
   height: 1em;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   ::ng-deep {
     > svg {
       width: 1em;
